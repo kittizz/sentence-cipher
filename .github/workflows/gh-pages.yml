@@ -29,6 +29,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pnpm --filter playground update sentence-cipher
           pnpm --filter playground install
 
       - name: Build

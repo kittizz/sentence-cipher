@@ -25,6 +25,7 @@
   "scripts": {
     "dev": "pnpm --filter playground dev",
     "build": "pnpm --filter exports,playground build",
+    "update": "pnpm --filter playground update sentence-cipher",
     "release": "pnpm --filter exports build && pnpm bumpp && pnpm publish --no-git-checks --access public"
   },
   "dependencies": {
