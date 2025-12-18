@@ -1,0 +1,43 @@
+{
+  "name": "sentence-cipher-exports",
+  "type": "module",
+  "sideEffects": false,
+  "version": "0.0.0",
+  "description": "Exports for sentence-cipher.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kittizz/sentence-cipher.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kittizz/sentence-cipher/issues"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "scripts": {
+    "setup": "node build.ts setup",
+    "build": "node build.ts build",
+    "build:node": "node build.ts build:node",
+    "build:ts": "node build.ts build:ts",
+    "clean": "node build.ts clean",
+    "dev": "tsdown --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "release": "pnpm run build && bumpp && pnpm publish --no-git-checks --access public"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.4",
+    "bumpp": "^10.3.2",
+    "tsdown": "^0.17.4",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
+}
