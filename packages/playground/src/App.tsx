@@ -1,5 +1,5 @@
 import { createSignal, createMemo, Show, For } from "solid-js";
-import { createCipher, createDefaultCipher } from "sentence-cipher-exports";
+import { createCipher, createDefaultCipher } from "sentence-cipher";
 
 const randomString = (length: number): string => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
