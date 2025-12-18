@@ -4,9 +4,16 @@ import { execSync, spawnSync } from "child_process";
 import { rmSync, existsSync } from "fs";
 import { resolve } from "path";
 
-const GO119 = "go1.19.13";
 const GOPHERJS_VERSION = "v1.19.0-beta2";
 const DIST_DIR = "dist";
+
+// Check if go1.19.13 exists, otherwise use "go"
+function getGoCommand(): string {
+  const result = spawnSync("go1.19.13", ["version"], { encoding: "utf-8" });
+  return result.status === 0 ? "go1.19.13" : "go";
+}
+
+const GO_CMD = getGoCommand();
 
 function run(cmd: string, options: Record<string, unknown> = {}): void {
   console.log(`> ${cmd}`);
@@ -18,16 +25,16 @@ function run(cmd: string, options: Record<string, unknown> = {}): void {
 }
 
 function getGoEnv(varName: string): string {
-  const result = spawnSync(GO119, ["env", varName], { encoding: "utf-8" });
-  return result.stdout.trim();
+  const result = spawnSync(GO_CMD, ["env", varName], { encoding: "utf-8" });
+  return result.stdout?.trim() ?? "";
 }
 
 const commands: Record<string, () => void> = {
   setup() {
     console.log("📦 Installing Go toolchain and dependencies...\n");
-    run(`go install "golang.org/dl/${GO119}@latest"`);
-    run(`${GO119} download`);
-    run(`${GO119} install "github.com/gopherjs/gopherjs@${GOPHERJS_VERSION}"`);
+    run(`go install "golang.org/dl/go1.19.13@latest"`);
+    run(`go1.19.13 download`);
+    run(`go1.19.13 install "github.com/gopherjs/gopherjs@${GOPHERJS_VERSION}"`);
     run("corepack enable");
     run("corepack prepare pnpm@latest --activate");
     run("pnpm install");
