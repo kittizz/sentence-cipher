@@ -33,7 +33,9 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: |
+          go mod download
+          pnpm install
 
       - name: Build
         run: pnpm build
