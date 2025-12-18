@@ -2,7 +2,7 @@
   "name": "sentence-cipher",
   "type": "module",
   "sideEffects": false,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A Go/Node.js library that encodes data into natural-looking English sentences for steganography.",
   "repository": {
     "type": "git",
@@ -31,7 +31,7 @@
     "dev": "tsdown --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bumpp && pnpm run build"
+    "release": "pnpm run build && bumpp && pnpm publish --no-git-checks --access public"
   },
   "devDependencies": {
     "@types/node": "^24.10.4",
