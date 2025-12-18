@@ -51,7 +51,7 @@ var defaultVerbs = []string{
 	"schedules", "plans", "organizes", "arranges", "prepares", "coordinates", "hosts", "attends",
 	"writes", "drafts", "creates", "designs", "develops", "builds", "makes", "produces",
 	"edits", "revises", "reviews", "checks", "tests", "analyzes", "evaluates", "assesses",
-	"fixes", "solves", "resolves", "manages", "addresses", "tackles", "processes", "completes",
+	"fixes", "solves", "resolves", "handles", "addresses", "tackles", "processes", "completes",
 	"finishes", "closes", "seals", "concludes", "finalizes", "achieves", "accomplishes", "fulfills",
 	"learns", "studies", "researches", "explores", "discovers", "finds", "locates", "identifies",
 	"understands", "grasps", "masters", "improves", "enhances", "upgrades", "advances", "progresses",
@@ -71,7 +71,7 @@ var defaultVerbs = []string{
 	"ranks", "rates", "scores", "grades", "measures", "quantifies", "calculates", "counts",
 	"copies", "prints", "scans", "faxes", "mails", "ships", "packs", "bundles",
 	"cleans", "tidies", "sorts", "orders", "labels", "marks", "stamps", "signs",
-	"books", "reserves", "verifies", "cancels", "reschedules", "postpones", "delays", "rushes",
+	"books", "reserves", "double-checks", "cancels", "reschedules", "postpones", "delays", "rushes",
 	"fetches", "grabs", "picks", "drops", "lifts", "relocates", "places", "sets",
 }
 
@@ -107,6 +107,6 @@ var defaultObjects = []string{
 	"certificates", "diplomas", "badges", "medals", "honors", "recognitions", "credits", "bonuses",
 	"links", "urls", "sites", "pages", "posts", "articles", "blogs", "content",
 	"photos", "images", "videos", "clips", "recordings", "podcasts", "streams", "broadcasts",
-	"keys", "cards", "passes", "badges", "permits", "licenses", "credentials", "tokens",
+	"keys", "cards", "passes", "tags", "permits", "licenses", "credentials", "tokens",
 	"snacks", "drinks", "lunches", "coffees", "treats", "gifts", "favors", "surprises",
 }

@@ -73,31 +73,39 @@ Examples:
 	}
 
 	// Get input
-	var input string
+	var inputData []byte
+	var inputText string
 	var err error
+	isFileInput := false
 
 	if *inputFile != "" {
-		// Read from file
-		data, err := os.ReadFile(*inputFile)
+		// Read from file as raw bytes
+		inputData, err = os.ReadFile(*inputFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
 			os.Exit(1)
 		}
-		input = string(data)
+		isFileInput = true
+		if *decodeFlag {
+			// For decoding, input is text (encoded sentences)
+			inputText = strings.TrimSpace(string(inputData))
+		}
 	} else if flag.NArg() > 0 {
 		// Read from arguments
-		input = strings.Join(flag.Args(), " ")
+		inputText = strings.Join(flag.Args(), " ")
+		inputData = []byte(inputText)
 	} else {
 		// Read from stdin
-		input, err = readStdin()
+		inputText, err = readStdin()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading stdin: %v\n", err)
 			os.Exit(1)
 		}
+		inputText = strings.TrimSpace(inputText)
+		inputData = []byte(inputText)
 	}
 
-	input = strings.TrimSpace(input)
-	if input == "" {
+	if len(inputData) == 0 && inputText == "" {
 		fmt.Fprintln(os.Stderr, "Error: no input provided")
 		flag.Usage()
 		os.Exit(1)
@@ -116,46 +124,53 @@ Examples:
 	}
 
 	// Process
-	var output string
+	var outputText string
+	var outputData []byte
+	isBinaryOutput := false
 
 	if *decodeFlag {
-		// Decode
-		var decoded string
-		var err error
+		// Decode - output is raw bytes
 		if *naturalFlag {
-			data, err := cipher.DecodeNatural(input)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error decoding: %v\n", err)
-				os.Exit(1)
-			}
-			decoded = string(data)
+			outputData, err = cipher.DecodeNatural(inputText)
 		} else {
-			decoded, err = cipher.DecodeString(input)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error decoding: %v\n", err)
-				os.Exit(1)
-			}
+			outputData, err = cipher.Decode(inputText)
 		}
-		output = decoded
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error decoding: %v\n", err)
+			os.Exit(1)
+		}
+		isBinaryOutput = true
 	} else {
-		// Encode
+		// Encode - input is raw bytes, output is text
 		if *naturalFlag {
-			output = cipher.EncodeNatural([]byte(input))
+			outputText = cipher.EncodeNatural(inputData)
 		} else {
-			output = cipher.EncodeString(input)
+			outputText = cipher.Encode(inputData)
 		}
 	}
 
 	// Write output
 	if *outputFile != "" {
-		err := os.WriteFile(*outputFile, []byte(output+"\n"), 0644)
+		var writeData []byte
+		if isBinaryOutput {
+			writeData = outputData
+		} else {
+			writeData = []byte(outputText + "\n")
+		}
+		err := os.WriteFile(*outputFile, writeData, 0644)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing file: %v\n", err)
 			os.Exit(1)
 		}
 	} else {
-		fmt.Println(output)
+		if isBinaryOutput {
+			// Write raw bytes to stdout (for binary decode without -o)
+			os.Stdout.Write(outputData)
+		} else {
+			fmt.Println(outputText)
+		}
 	}
+	_ = isFileInput
 }
 
 func readStdin() (string, error) {

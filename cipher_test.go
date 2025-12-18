@@ -2,6 +2,8 @@ package sentencecipher
 
 import (
 	"bytes"
+	"fmt"
+	"os"
 	"testing"
 )
 
@@ -200,6 +202,254 @@ func TestAllTwoByteCombinatons(t *testing.T) {
 			t.Errorf("Two bytes %v: expected %v, got %v", sample, input, decoded)
 		}
 	}
+}
+
+func TestBinaryData(t *testing.T) {
+	// PNG header signature
+	pngHeader := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+
+	tests := []struct {
+		name  string
+		input []byte
+	}{
+		{"png header", pngHeader},
+		{"null bytes", []byte{0x00, 0x00, 0x00, 0x00}},
+		{"high bytes", []byte{0xFF, 0xFE, 0xFD, 0xFC}},
+		{"mixed binary", []byte{0x00, 0xFF, 0x7F, 0x80, 0x01, 0xFE}},
+		{"random binary", []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			encoded := Encode(tt.input)
+			decoded, err := Decode(encoded)
+			if err != nil {
+				t.Fatalf("Decode error: %v", err)
+			}
+			if !bytes.Equal(decoded, tt.input) {
+				t.Errorf("Binary encode/decode mismatch\noriginal: %v\ndecoded:  %v", tt.input, decoded)
+			}
+		})
+	}
+}
+
+func TestCipherWithKey(t *testing.T) {
+	tests := []struct {
+		name  string
+		key   string
+		input []byte
+	}{
+		{"simple key", "secret", []byte("Hello")},
+		{"complex key", "my-super-secret-key-123!", []byte("Secret message")},
+		{"binary with key", "test-key", []byte{0x89, 0x50, 0x4E, 0x47}},
+		{"all bytes with key", "key123", func() []byte {
+			b := make([]byte, 256)
+			for i := 0; i < 256; i++ {
+				b[i] = byte(i)
+			}
+			return b
+		}()},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cipher, err := NewCipher(tt.key)
+			if err != nil {
+				t.Fatalf("NewCipher error: %v", err)
+			}
+
+			encoded := cipher.Encode(tt.input)
+			decoded, err := cipher.Decode(encoded)
+			if err != nil {
+				t.Fatalf("Decode error: %v", err)
+			}
+			if !bytes.Equal(decoded, tt.input) {
+				t.Errorf("Cipher encode/decode mismatch\noriginal: %v\ndecoded:  %v", tt.input, decoded)
+			}
+		})
+	}
+}
+
+func TestCipherNaturalWithKey(t *testing.T) {
+	tests := []struct {
+		name  string
+		key   string
+		input []byte
+	}{
+		{"natural with key", "my-key", []byte("Hello World")},
+		{"binary natural", "binary-key", []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cipher, err := NewCipher(tt.key)
+			if err != nil {
+				t.Fatalf("NewCipher error: %v", err)
+			}
+
+			encoded := cipher.EncodeNatural(tt.input)
+			decoded, err := cipher.DecodeNatural(encoded)
+			if err != nil {
+				t.Fatalf("DecodeNatural error: %v", err)
+			}
+			if !bytes.Equal(decoded, tt.input) {
+				t.Errorf("Cipher natural encode/decode mismatch\noriginal: %v\ndecoded:  %v", tt.input, decoded)
+			}
+		})
+	}
+}
+
+func TestDifferentKeysProduceDifferentOutput(t *testing.T) {
+	input := []byte("Secret message")
+
+	cipher1, _ := NewCipher("key1")
+	cipher2, _ := NewCipher("key2")
+	defaultCipher := NewDefaultCipher()
+
+	encoded1 := cipher1.Encode(input)
+	encoded2 := cipher2.Encode(input)
+	encodedDefault := defaultCipher.Encode(input)
+
+	if encoded1 == encoded2 {
+		t.Error("Different keys should produce different encoded output")
+	}
+	if encoded1 == encodedDefault {
+		t.Error("Keyed cipher should produce different output than default")
+	}
+	if encoded2 == encodedDefault {
+		t.Error("Keyed cipher should produce different output than default")
+	}
+}
+
+func TestWrongKeyCannotDecode(t *testing.T) {
+	input := []byte("Secret message")
+
+	cipher1, _ := NewCipher("correct-key")
+	cipher2, _ := NewCipher("wrong-key")
+
+	encoded := cipher1.Encode(input)
+	decoded, err := cipher2.Decode(encoded)
+
+	// With wrong key, either error or different data
+	if err == nil && bytes.Equal(decoded, input) {
+		t.Error("Wrong key should not decode correctly")
+	}
+}
+
+func TestAllThreeByteGroups(t *testing.T) {
+	// Test all possible 3-byte combinations for first 16 values
+	// (full 256^3 would be too slow)
+	for b1 := 0; b1 < 16; b1++ {
+		for b2 := 0; b2 < 16; b2++ {
+			for b3 := 0; b3 < 16; b3++ {
+				input := []byte{byte(b1 * 16), byte(b2 * 16), byte(b3 * 16)}
+				encoded := Encode(input)
+				decoded, err := Decode(encoded)
+				if err != nil {
+					t.Errorf("Failed to decode %v: %v", input, err)
+					continue
+				}
+				if !bytes.Equal(decoded, input) {
+					t.Errorf("Three bytes %v: got %v", input, decoded)
+				}
+			}
+		}
+	}
+}
+
+func TestLargeBinaryData(t *testing.T) {
+	// Test with larger binary data (simulating a small file)
+	sizes := []int{100, 500, 1000, 2000}
+
+	for _, size := range sizes {
+		t.Run(fmt.Sprintf("size_%d", size), func(t *testing.T) {
+			input := make([]byte, size)
+			for i := 0; i < size; i++ {
+				input[i] = byte(i % 256)
+			}
+
+			encoded := Encode(input)
+			decoded, err := Decode(encoded)
+			if err != nil {
+				t.Fatalf("Decode error for size %d: %v", size, err)
+			}
+			if !bytes.Equal(decoded, input) {
+				t.Errorf("Large binary mismatch for size %d", size)
+			}
+		})
+	}
+}
+
+func TestLargeBinaryWithKey(t *testing.T) {
+	cipher, _ := NewCipher("test-key-for-large-data")
+
+	input := make([]byte, 1000)
+	for i := 0; i < 1000; i++ {
+		input[i] = byte(i % 256)
+	}
+
+	encoded := cipher.Encode(input)
+	decoded, err := cipher.Decode(encoded)
+	if err != nil {
+		t.Fatalf("Decode error: %v", err)
+	}
+	if !bytes.Equal(decoded, input) {
+		t.Error("Large binary with key mismatch")
+	}
+}
+
+func TestImageFile(t *testing.T) {
+	// Read actual PNG file
+	imgData, err := os.ReadFile("icon16.png")
+	if err != nil {
+		t.Skipf("Skipping image test: %v", err)
+	}
+
+	t.Run("normal_mode", func(t *testing.T) {
+		encoded := Encode(imgData)
+		decoded, err := Decode(encoded)
+		if err != nil {
+			t.Fatalf("Decode error: %v", err)
+		}
+		if !bytes.Equal(decoded, imgData) {
+			t.Errorf("Image encode/decode mismatch: original %d bytes, decoded %d bytes", len(imgData), len(decoded))
+		}
+	})
+
+	t.Run("natural_mode", func(t *testing.T) {
+		encoded := EncodeNatural(imgData)
+		decoded, err := DecodeNatural(encoded)
+		if err != nil {
+			t.Fatalf("DecodeNatural error: %v", err)
+		}
+		if !bytes.Equal(decoded, imgData) {
+			t.Errorf("Image natural encode/decode mismatch: original %d bytes, decoded %d bytes", len(imgData), len(decoded))
+		}
+	})
+
+	t.Run("with_key", func(t *testing.T) {
+		cipher, _ := NewCipher("image-test-key")
+		encoded := cipher.Encode(imgData)
+		decoded, err := cipher.Decode(encoded)
+		if err != nil {
+			t.Fatalf("Decode error: %v", err)
+		}
+		if !bytes.Equal(decoded, imgData) {
+			t.Errorf("Image with key encode/decode mismatch: original %d bytes, decoded %d bytes", len(imgData), len(decoded))
+		}
+	})
+
+	t.Run("natural_with_key", func(t *testing.T) {
+		cipher, _ := NewCipher("image-natural-key")
+		encoded := cipher.EncodeNatural(imgData)
+		decoded, err := cipher.DecodeNatural(encoded)
+		if err != nil {
+			t.Fatalf("DecodeNatural error: %v", err)
+		}
+		if !bytes.Equal(decoded, imgData) {
+			t.Errorf("Image natural with key encode/decode mismatch: original %d bytes, decoded %d bytes", len(imgData), len(decoded))
+		}
+	})
 }
 
 func BenchmarkEncode(b *testing.B) {

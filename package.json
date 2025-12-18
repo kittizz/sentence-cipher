@@ -23,7 +23,8 @@
     "package.json"
   ],
   "scripts": {
-    "build": "pnpm --filter sentence-cipher-exports build && pnpm --filter vite-template-solid build",
-    "release": "pnpm --filter sentence-cipher-exports build && bumpp && pnpm publish --no-git-checks --access public"
+    "dev": "pnpm --filter playground dev",
+    "build": "pnpm --filter exports,playground build",
+    "release": "pnpm --filter exports build && bumpp && pnpm publish --no-git-checks --access public"
   }
 }

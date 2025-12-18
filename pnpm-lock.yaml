@@ -28,6 +28,9 @@ importers:
 
   packages/playground:
     dependencies:
+      sentence-cipher-exports:
+        specifier: workspace:*
+        version: link:../exports
       solid-js:
         specifier: ^1.9.9
         version: 1.9.10

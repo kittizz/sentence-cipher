@@ -1,5 +1,5 @@
 {
-  "name": "sentence-cipher-exports",
+  "name": "exports",
   "type": "module",
   "sideEffects": false,
   "version": "0.0.0",

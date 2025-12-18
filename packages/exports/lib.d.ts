@@ -18,5 +18,3 @@ export function encodeString(s: string): string;
 export function decodeString(encoded: string): string;
 export function encodeNatural(data: Uint8Array): string;
 export function decodeNatural(encoded: string): Uint8Array;
-
-export function randomString(length: number): string;
