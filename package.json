@@ -32,7 +32,7 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm run build",
-    "publish": "bumpp && npm publish"
+    "publish": "bumpp && pnpm publish"
   },
   "devDependencies": {
     "@types/node": "^24.10.4",
