@@ -32,9 +32,10 @@ function getGoEnv(varName: string): string {
 const commands: Record<string, () => void> = {
   setup() {
     console.log("📦 Installing Go toolchain and dependencies...\n");
-    run(`go install "golang.org/dl/go1.19.13@latest"`);
-    run(`go1.19.13 download`);
-    run(`go1.19.13 install "github.com/gopherjs/gopherjs@${GOPHERJS_VERSION}"`);
+    run(`${GO_CMD} install "golang.org/dl/go1.19.13@latest"`);
+    run(`${GO_CMD} download`);
+
+    run(`${GO_CMD} install "github.com/gopherjs/gopherjs@${GOPHERJS_VERSION}"`);
     run("corepack enable");
     run("corepack prepare pnpm@latest --activate");
     run("pnpm install");
