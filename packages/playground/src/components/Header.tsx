@@ -1,7 +1,7 @@
 export const Header = () => (
   <header class="text-center mb-10">
     <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent mb-3">
-      Sentence Cipher
+      Sentence Cipher Steganography Playground
     </h1>
     <p class="text-slate-400 text-lg">
       Hide your secrets in plain sight with natural-looking sentences
