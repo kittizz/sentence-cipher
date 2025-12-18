@@ -1,2 +1,5 @@
 onlyBuiltDependencies:
-  - esbuild
+    - esbuild
+packages:
+    - packages/exports
+    - packages/playground
