@@ -120,12 +120,13 @@ export const InputSection = (props: Props) => (
       <textarea
         value={props.input()}
         onInput={(e) => props.setInput(e.currentTarget.value)}
+        spellcheck={false}
         placeholder={
           props.mode() === "encode"
             ? "Enter your secret message..."
             : "Paste encoded sentences here..."
         }
-        class="w-full h-40 bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all resize-none font-mono text-sm"
+        class="w-full min-h-40 bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all resize-y font-mono text-sm whitespace-pre-wrap"
       />
     </Show>
   </div>

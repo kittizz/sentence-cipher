@@ -131,11 +131,11 @@ func TestNaturalEncodingVariety(t *testing.T) {
 	// Natural encoding should use varied templates
 	t.Logf("Natural encoded: %q", encoded)
 
-	// Should contain some variety markers
-	hasVariety := bytes.Contains([]byte(encoded), []byte("always")) ||
-		bytes.Contains([]byte(encoded), []byte("today")) ||
-		bytes.Contains([]byte(encoded), []byte("Today,")) ||
-		bytes.Contains([]byte(encoded), []byte("really"))
+	// Should contain some variety markers (Email structure)
+	hasVariety := bytes.Contains([]byte(encoded), []byte("Subject:")) ||
+		bytes.Contains([]byte(encoded), []byte("Hi")) ||
+		bytes.Contains([]byte(encoded), []byte("Dear")) ||
+		bytes.Contains([]byte(encoded), []byte("Regards,"))
 
 	if !hasVariety {
 		t.Log("Warning: Natural encoding might not have enough variety")

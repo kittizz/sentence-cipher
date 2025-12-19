@@ -8,7 +8,6 @@ import {
   decodeNatural,
   createCipher,
   createDefaultCipher,
-  randomString,
 } from "../index.ts";
 
 // Helper to convert string to Uint8Array
@@ -116,20 +115,6 @@ describe("createDefaultCipher", () => {
   });
 });
 
-describe("randomString", () => {
-  it("should generate random string with specified length", () => {
-    const length = 16;
-    const result = randomString(length);
-    expect(result.length).toBe(length);
-  });
-
-  it("should generate different strings each time", () => {
-    const str1 = randomString(32);
-    const str2 = randomString(32);
-    expect(str1).not.toBe(str2);
-  });
-});
-
 describe("all byte values", () => {
   it("should encode/decode all possible byte values (0-255)", () => {
     for (let i = 0; i < 256; i++) {
@@ -160,12 +145,4 @@ describe("two byte combinations", () => {
       expect(decoded).toEqual(input);
     });
   }
-});
-
-describe("randomString", () => {
-  it("should generate random string with specified length", () => {
-    const length = 16;
-    const result = randomString(length);
-    expect(result.length).toBe(length);
-  });
 });

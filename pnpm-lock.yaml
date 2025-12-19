@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  sentence-cipher: link:./packages/exports
+
 importers:
 
   .:
@@ -30,8 +33,8 @@ importers:
   packages/playground:
     dependencies:
       sentence-cipher:
-        specifier: ^1.0.5
-        version: 1.1.0
+        specifier: link:../exports
+        version: link:../exports
       solid-js:
         specifier: ^1.9.9
         version: 1.9.10
@@ -1226,9 +1229,6 @@ packages:
     resolution: {integrity: sha512-SdsKMrI9TdgjdweUSR9MweHA4EJ8YxHn8DFaDisvhVlUOe4BF1tLD7GAj0lIqWVl+dPb/rExr0Btby5loQm20Q==}
     engines: {node: '>=10'}
     hasBin: true
-
-  sentence-cipher@1.1.0:
-    resolution: {integrity: sha512-x6oF30Ax7OzrQFBbIZ5JRsIsa897I19lLXzQKrEaU6ysUvKm7YoJBvFV/4ATcAS0HPS3Q9myU17GZPuroGA5vw==}
 
   seroval-plugins@1.3.3:
     resolution: {integrity: sha512-16OL3NnUBw8JG1jBLUoZJsLnQq0n5Ua6aHalhJK4fMQkz1lqR7Osz1sA30trBtd9VUDc2NgkuRCn8+/pBwqZ+w==}
@@ -2500,12 +2500,6 @@ snapshots:
   semver@6.3.1: {}
 
   semver@7.7.3: {}
-
-  sentence-cipher@1.1.0:
-    dependencies:
-      bumpp: 10.3.2
-    transitivePeerDependencies:
-      - magicast
 
   seroval-plugins@1.3.3(seroval@1.3.2):
     dependencies:

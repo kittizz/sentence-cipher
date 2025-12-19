@@ -101,7 +101,7 @@ export const OutputSection = (props: Props) => (
     >
       <div class="space-y-3">
         <div
-          class={`w-full bg-slate-900/50 border rounded-xl px-4 py-3 font-mono text-sm ${
+          class={`w-full bg-slate-900/50 border rounded-xl px-4 py-3 font-mono text-sm whitespace-pre-wrap ${
             props.error() ? "border-red-600/50" : "border-purple-500/50 text-green-400"
           }`}
         >
@@ -131,7 +131,7 @@ export const OutputSection = (props: Props) => (
       }
     >
       <div
-        class={`w-full min-h-40 bg-slate-900/50 border rounded-xl px-4 py-3 font-mono text-sm overflow-auto ${
+        class={`w-full min-h-40 bg-slate-900/50 border rounded-xl px-4 py-3 font-mono text-sm overflow-auto whitespace-pre-wrap ${
           props.error()
             ? "border-red-600/50"
             : props.output()

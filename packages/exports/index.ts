@@ -8,5 +8,5 @@ export const {
   decodeString,
   encodeNatural,
   decodeNatural,
-  randomString,
+  getVersion,
 } = lib;

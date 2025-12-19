@@ -3,7 +3,7 @@ package sentencecipher
 // Word lists with 256 words each - Theme: Office/Workplace stories
 // Each word list has 256 entries (0-255) to encode 1 full byte per word
 
-// 256 employee names (subjects and indirect objects) - 32 rows x 8 columns = 256
+// 256 employee names (Shared across themes)
 var defaultNames = []string{
 	"adam", "alex", "alice", "amanda", "amy", "andrew", "angela", "anna",
 	"anthony", "ashley", "austin", "barbara", "benjamin", "beth", "blake", "brandon",
@@ -39,7 +39,19 @@ var defaultNames = []string{
 	"cassie", "chad", "charlie", "cheryl", "chloe", "cindy", "clara", "claude",
 }
 
-// 256 workplace verbs (32 rows x 8 columns = 256) - no duplicates
+// ==========================================
+// THEME: BUSINESS / CORPORATE (Default)
+// ==========================================
+
+var businessSubjects = []string{
+	"Project Update", "Meeting Notes", "Weekly Report", "Status Update",
+	"Action Required", "Follow up", "Important Update", "Team Update",
+	"Sync Up", "Discussion Points", "Next Steps", "Review Request",
+	"Sprint Planning", "Budget Review", "Quarterly Goals", "Hiring Plan",
+	"Client Feedback", "Marketing Strategy", "Sales Report", "Proposal Review",
+}
+
+// 256 workplace verbs (Business/General)
 var defaultVerbs = []string{
 	"helps", "assists", "supports", "guides", "mentors", "coaches", "trains", "teaches",
 	"shows", "explains", "clarifies", "advises", "counsels", "directs", "leads", "manages",
@@ -75,7 +87,7 @@ var defaultVerbs = []string{
 	"fetches", "grabs", "picks", "drops", "lifts", "relocates", "places", "sets",
 }
 
-// 256 workplace objects (32 rows x 8 columns = 256)
+// 256 workplace objects (Business/General)
 var defaultObjects = []string{
 	"reports", "documents", "files", "records", "forms", "papers", "sheets", "notes",
 	"memos", "letters", "emails", "messages", "drafts", "copies", "prints", "scans",
@@ -109,4 +121,141 @@ var defaultObjects = []string{
 	"photos", "images", "videos", "clips", "recordings", "podcasts", "streams", "broadcasts",
 	"keys", "cards", "passes", "tags", "permits", "licenses", "credentials", "tokens",
 	"snacks", "drinks", "lunches", "coffees", "treats", "gifts", "favors", "surprises",
+}
+
+// ==========================================
+// THEME: TECHNOLOGY / ENGINEERING
+// ==========================================
+
+var techSubjects = []string{
+	"Server Outage", "Deployment Status", "API Updates", "Security Alert",
+	"Code Review", "Database Migration", "System Maintenance", "Bug Bash",
+	"Incident Report", "Release Notes", "Latency Issues", "Network Upgrade",
+	"Cloud Infrastructure", "DevOps Sync", "Architecture Review", "Feature Flag",
+}
+
+// 256 Tech verbs
+var techVerbs = []string{
+	"codes", "programs", "compiles", "debugs", "executes", "runs", "builds", "deploys",
+	"commits", "pushes", "pulls", "merges", "branches", "forks", "clones", "rebases",
+	"fetches", "checkouts", "stashes", "reverts", "resets", "cherry-picks", "tags", "releases",
+	"installs", "updates", "upgrades", "patches", "configures", "sets", "initializes", "boots",
+	"restarts", "reboots", "shuts", "terminates", "kills", "stops", "halts", "suspends",
+	"monitors", "logs", "tracks", "traces", "alerts", "notifies", "pings", "queries",
+	"requests", "responses", "fetches", "posts", "gets", "puts", "deletes", "patches",
+	"authenticates", "authorizes", "verifies", "validates", "encrypts", "decrypts", "hashes", "signs",
+	"compresses", "zips", "archives", "extracts", "parses", "serializes", "encodes", "decodes",
+	"renders", "paints", "draws", "displays", "shows", "hides", "toggles", "switches",
+	"clicks", "taps", "scrolls", "swipes", "drags", "drops", "hovers", "focuses",
+	"inputs", "types", "pastes", "copies", "cuts", "selects", "highlights", "edits",
+	"saves", "loads", "reads", "writes", "opens", "closes", "imports", "exports",
+	"uploads", "downloads", "syncs", "transfers", "streams", "buffers", "caches", "stores",
+	"indexes", "searches", "filters", "sorts", "groups", "maps", "reduces", "iterates",
+	"loops", "breaks", "continues", "returns", "throws", "catches", "tries", "awaits",
+	"resolves", "rejects", "promises", "observes", "subscribes", "publishes", "emits", "broadcasts",
+	"connects", "disconnects", "listens", "binds", "unbinds", "mounts", "unmounts", "routes",
+	"navigates", "redirects", "forwards", "proxies", "tunnels", "bridges", "links", "chains",
+	"tests", "mocks", "stubs", "spies", "asserts", "expects", "fails", "passes",
+	"measures", "profiles", "benchmarks", "optimizes", "scales", "expands", "shrinks", "limits",
+	"throttles", "blocks", "allows", "denies", "bans", "permits", "grants", "revokes",
+	"assigns", "allocates", "frees", "collects", "cleans", "wipes", "erases", "formats",
+	"partitions", "mounts", "ejects", "scans", "pairs", "charges", "powers", "drains",
+	"computes", "calculates", "processes", "handles", "services", "providers", "consumes", "generates",
+	"simulates", "emulates", "virtualizes", "containers", "dockers", "kubes", "orchestrates", "manages",
+	"automates", "scripts", "commands", "controls", "rules", "governs", "directs", "leads",
+	"analyzes", "inspects", "audits", "reviews", "checks", "scans", "probes", "tests",
+	"designs", "architects", "engineers", "develops", "implements", "integrates", "unifies", "combines",
+	"refactors", "rewrites", "cleans", "polishes", "improves", "fixes", "solves", "hacks",
+	"tweaks", "tunes", "adjusts", "modifies", "changes", "transforms", "converts", "migrates",
+	"deprecates", "removes", "deletes", "destroys", "drops", "purges", "prunes", "trims",
+}
+
+// 256 Tech objects
+var techObjects = []string{
+	"servers", "databases", "tables", "rows", "columns", "indexes", "views", "queries",
+	"apis", "endpoints", "routes", "paths", "params", "headers", "bodies", "payloads",
+	"tokens", "keys", "secrets", "passwords", "hashes", "salts", "ciphers", "certs",
+	"logs", "metrics", "traces", "spans", "events", "signals", "alerts", "errors",
+	"exceptions", "bugs", "issues", "tickets", "tasks", "stories", "epics", "sprints",
+	"commits", "prs", "branches", "tags", "releases", "builds", "artifacts", "images",
+	"containers", "pods", "nodes", "clusters", "services", "ingresses", "volumes", "networks",
+	"firewalls", "rules", "policies", "roles", "groups", "users", "accounts", "profiles",
+	"sessions", "cookies", "caches", "buffers", "queues", "topics", "channels", "streams",
+	"sockets", "ports", "ips", "subnets", "dns", "records", "domains", "hosts",
+	"files", "folders", "dirs", "paths", "links", "inodes", "blocks", "sectors",
+	"disks", "drives", "ssds", "hdds", "raids", "partitions", "mounts", "swaps",
+	"cpu", "ram", "gpu", "tpu", "cores", "threads", "processes", "daemons",
+	"kernels", "drivers", "modules", "firmware", "bios", "bootloaders", "os", "distros",
+	"shells", "terminals", "consoles", "scripts", "binaries", "libraries", "packages", "dependencies",
+	"modules", "imports", "exports", "classes", "objects", "functions", "methods", "variables",
+	"constants", "types", "interfaces", "structs", "enums", "arrays", "lists", "maps",
+	"sets", "trees", "graphs", "heaps", "stacks", "vectors", "matrices", "tensors",
+	"strings", "integers", "floats", "booleans", "bytes", "bits", "chars", "runes",
+	"pointers", "refs", "values", "scopes", "closures", "contexts", "promises", "futures",
+	"threads", "mutexes", "locks", "semaphores", "monitors", "conditions", "barriers", "latches",
+	"frontend", "backend", "fullstack", "ui", "ux", "css", "html", "js",
+	"react", "vue", "angular", "node", "deno", "bun", "go", "rust",
+	"java", "python", "ruby", "php", "c", "cpp", "csharp", "swift",
+	"kotlin", "scala", "clojure", "haskell", "elixir", "erlang", "lua", "perl",
+	"sql", "nosql", "redis", "mongo", "postgres", "mysql", "sqlite", "oracle",
+	"aws", "azure", "gcp", "cloud", "lambda", "s3", "ec2", "rds",
+	"docker", "kubernetes", "helm", "terraform", "ansible", "jenkins", "gitlab", "github",
+	"vscode", "vim", "emacs", "nano", "ide", "editor", "compiler", "debugger",
+	"linter", "formatter", "parser", "lexer", "ast", "bytecode", "assembly", "machine",
+	"laptop", "desktop", "monitor", "keyboard", "mouse", "trackpad", "webcam", "mic",
+	"wifi", "bluetooth", "ethernet", "cable", "router", "switch", "modem", "gateway",
+}
+
+// Common components
+var emailOpeners = []string{
+	"Hi Team,",
+	"Dear Colleagues,",
+	"Hello everyone,",
+	"Hi all,",
+	"Good morning,",
+	"Good afternoon,",
+	"Team,",
+	"Greetings,",
+	"Hi there,",
+	"All,",
+}
+
+// Connectors to chain sentences naturally
+var sentenceConnectors = []string{
+	"Please note that",
+	"Additionally,",
+	"Furthermore,",
+	"Also,",
+	"Moreover,",
+	"In the meantime,",
+	"Moving forward,",
+	"As discussed,",
+	"Just a reminder that",
+	"For your information,",
+	"However,",
+	"Consequently,",
+	"Therefore,",
+	"In addition,",
+	"Meanwhile,",
+	"On another note,",
+	"Interestingly,",
+	"Remarkably,",
+	"Specifically,",
+	"Notably,",
+	"To clarify,",
+	"Currently,",
+	"Recently,",
+}
+
+var emailClosers = []string{
+	"Best regards,",
+	"Kind regards,",
+	"Sincerely,",
+	"Thanks,",
+	"Cheers,",
+	"Best,",
+	"Regards,",
+	"Warm regards,",
+	"Many thanks,",
+	"Talk soon,",
 }

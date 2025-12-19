@@ -19,7 +19,7 @@
     "vite-plugin-solid": "^2.11.8"
   },
   "dependencies": {
-    "sentence-cipher": "^1.0.5",
+    "sentence-cipher": "workspace:*",
     "solid-js": "^1.9.9"
   }
 }

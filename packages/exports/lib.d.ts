@@ -12,6 +12,7 @@ export interface Cipher {
 export function createCipher(key: string): Cipher;
 export function createDefaultCipher(): Cipher;
 
+export function getVersion(): string;
 export function encode(data: Uint8Array): string;
 export function decode(encoded: string): Uint8Array;
 export function encodeString(s: string): string;

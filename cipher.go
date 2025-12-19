@@ -8,13 +8,17 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"unicode"
 )
+
+const Version = "2.0.1"
 
 // Cipher holds the shuffled word lists based on a key
 type Cipher struct {
 	names   []string
 	verbs   []string
 	objects []string
+	key     string // Store key for regenerating themed ciphers
 }
 
 // NewCipher creates a new Cipher with word lists shuffled based on the provided key
@@ -29,6 +33,7 @@ func NewCipher(key string) (*Cipher, error) {
 		names:   shuffleWithSeed(defaultNames, seed),
 		verbs:   shuffleWithSeed(defaultVerbs, seed+1),
 		objects: shuffleWithSeed(defaultObjects, seed+2),
+		key:     key,
 	}, nil
 }
 
@@ -38,6 +43,45 @@ func NewDefaultCipher() *Cipher {
 		names:   copySlice(defaultNames),
 		verbs:   copySlice(defaultVerbs),
 		objects: copySlice(defaultObjects),
+		key:     "",
+	}
+}
+
+// NewThemedCipher creates a Cipher based on a specific theme
+func NewThemedCipher(key string, theme string) *Cipher {
+	var verbs, objects []string
+
+	switch theme {
+	case "tech":
+		verbs = techVerbs
+		objects = techObjects
+	case "business":
+		verbs = defaultVerbs // default is business
+		objects = defaultObjects
+	default:
+		verbs = defaultVerbs
+		objects = defaultObjects
+	}
+
+	if key != "" {
+		// If key is provided, shuffle the themed lists
+		hash := sha256.Sum256([]byte(key))
+		seed := int64(binary.BigEndian.Uint64(hash[:8]))
+
+		return &Cipher{
+			names:   shuffleWithSeed(defaultNames, seed),
+			verbs:   shuffleWithSeed(verbs, seed+1),
+			objects: shuffleWithSeed(objects, seed+2),
+			key:     key,
+		}
+	}
+
+	// Default (unshuffled) but themed
+	return &Cipher{
+		names:   copySlice(defaultNames),
+		verbs:   copySlice(verbs),
+		objects: copySlice(objects),
+		key:     "",
 	}
 }
 
@@ -81,12 +125,18 @@ func (c *Cipher) Encode(data []byte) string {
 			b2 := data[i+1] // verb
 			b3 := data[i+2] // object
 
-			subject := c.names[b1]
-			verb := c.verbs[b2]
-			// IO derived for natural flow
-			ioIdx := (int(b1) + int(b2)) % 256
+			// Rotation logic with position offset
+			offset := i
+			idx1 := (int(b1) + offset) % 256
+			idx2 := (int(b2) + offset + 1) % 256
+			idx3 := (int(b3) + offset + 2) % 256
+
+			subject := c.names[idx1]
+			verb := c.verbs[idx2]
+			// IO derived for natural flow using rotated indices
+			ioIdx := (idx1 + idx2) % 256
 			indirectObj := c.names[ioIdx]
-			obj := c.objects[b3]
+			obj := c.objects[idx3]
 
 			sentences = append(sentences, fmt.Sprintf("%s %s %s %s.", subject, verb, indirectObj, obj))
 			i += 3
@@ -95,15 +145,22 @@ func (c *Cipher) Encode(data []byte) string {
 			b1 := data[i]
 			b2 := data[i+1]
 
-			subject := c.names[b1]
-			verb := c.verbs[b2]
+			offset := i
+			idx1 := (int(b1) + offset) % 256
+			idx2 := (int(b2) + offset + 1) % 256
+
+			subject := c.names[idx1]
+			verb := c.verbs[idx2]
 
 			sentences = append(sentences, fmt.Sprintf("%s %s daily.", subject, verb))
 			i += 2
 		} else {
 			// Pattern: S + works (encodes 1 byte)
 			b := data[i]
-			subject := c.names[b]
+			offset := i
+			idx := (int(b) + offset) % 256
+
+			subject := c.names[idx]
 
 			sentences = append(sentences, fmt.Sprintf("%s works.", subject))
 			i++
@@ -126,6 +183,7 @@ func (c *Cipher) Decode(encoded string) ([]byte, error) {
 
 	sentences := splitSentences(encoded)
 	var result []byte
+	byteCount := 0 // Track byte position for rotation offset
 
 	for _, sentence := range sentences {
 		sentence = strings.TrimSpace(sentence)
@@ -142,11 +200,23 @@ func (c *Cipher) Decode(encoded string) ([]byte, error) {
 		lastIdx := len(words) - 1
 		words[lastIdx] = strings.TrimSuffix(words[lastIdx], ".")
 
-		bytes, err := c.decodeSentence(words)
+		// Get rotated bytes from decodeSentence (which returns indices basically)
+		chunkBytes, err := c.decodeSentence(words)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, bytes...)
+
+		// Un-rotate bytes using position offset
+		for j, bRotated := range chunkBytes {
+			offset := byteCount + j
+			// Reverse rotation: val = (rotated - offset) % 256
+			val := (int(bRotated) - offset) % 256
+			if val < 0 {
+				val += 256
+			}
+			result = append(result, byte(val))
+		}
+		byteCount += len(chunkBytes)
 	}
 
 	return result, nil
@@ -177,6 +247,13 @@ func splitSentences(text string) []string {
 }
 
 func (c *Cipher) decodeSentence(words []string) ([]byte, error) {
+	// Clean up words to ensure lowercase for matching
+	cleanWords := make([]string, len(words))
+	for i, w := range words {
+		cleanWords[i] = strings.ToLower(w)
+	}
+	words = cleanWords
+
 	if len(words) < 2 {
 		return nil, errors.New("invalid sentence: too few words")
 	}
@@ -266,58 +343,143 @@ func DecodeString(encoded string) (string, error) {
 	return string(data), nil
 }
 
-// EncodeNatural creates more varied, natural-looking sentences (Cipher method)
+// EncodeNatural creates more varied, natural-looking sentences structured as an email (Cipher method)
 func (c *Cipher) EncodeNatural(data []byte) string {
 	if len(data) == 0 {
 		return ""
 	}
 
-	templates := []string{
-		"%s %s %s %s.",
-		"today %s %s %s %s.",
-		"later %s %s %s %s.",
-		"then %s %s %s %s.",
-		"now %s %s %s %s.",
+	// Calculate a simple seed from data to make deterministic choices
+	// Mix in key hash so that different keys produce different seeds/themes
+	seed := 0
+	if c.key != "" {
+		hash := sha256.Sum256([]byte(c.key))
+		// Use modulo on uint64 before casting to int to avoid negative values from overflow
+		seed = int(binary.BigEndian.Uint64(hash[:8]) % 10000)
 	}
 
+	for _, b := range data {
+		seed = (seed + int(b)) % 10000
+	}
+
+	// Determine Theme
+	// 50% chance for Tech, 50% for Business
+	theme := "business"
+	if seed%2 == 0 {
+		theme = "tech"
+	}
+
+	// Select Subject based on Theme
+	var subj string
+	if theme == "tech" {
+		subj = techSubjects[seed%len(techSubjects)]
+	} else {
+		subj = businessSubjects[seed%len(businessSubjects)]
+	}
+
+	// Create Themed Cipher to encode the body
+	// This ensures the words match the theme
+	themedCipher := NewThemedCipher(c.key, theme)
+
+	// Generate basic sentences first using the themed cipher
 	var sentences []string
 	i := 0
-	templateIdx := 0
-
 	for i < len(data) {
 		remaining := len(data) - i
+		var s string
 
 		if remaining >= 3 {
 			b1 := data[i]
 			b2 := data[i+1]
 			b3 := data[i+2]
 
-			subject := c.names[b1]
-			verb := c.verbs[b2]
-			ioIdx := (int(b1) + int(b2)) % 256
-			indirectObj := c.names[ioIdx]
-			obj := c.objects[b3]
+			// Rotation logic to prevent repeating words for same bytes
+			// We use position (i) to offset the index
+			offset := i
+			idx1 := (int(b1) + offset) % 256
+			idx2 := (int(b2) + offset + 1) % 256
+			idx3 := (int(b3) + offset + 2) % 256
 
-			template := templates[templateIdx%len(templates)]
-			sentences = append(sentences, fmt.Sprintf(template, subject, verb, indirectObj, obj))
-			templateIdx++
+			subject := themedCipher.names[idx1]
+			verb := themedCipher.verbs[idx2]
+			ioIdx := (idx1 + idx2) % 256
+			indirectObj := themedCipher.names[ioIdx]
+			obj := themedCipher.objects[idx3]
+			s = fmt.Sprintf("%s %s %s %s", subject, verb, indirectObj, obj)
 			i += 3
 		} else if remaining == 2 {
 			b1 := data[i]
 			b2 := data[i+1]
-			subject := c.names[b1]
-			verb := c.verbs[b2]
-			sentences = append(sentences, fmt.Sprintf("%s %s daily.", subject, verb))
+
+			offset := i
+			idx1 := (int(b1) + offset) % 256
+			idx2 := (int(b2) + offset + 1) % 256
+
+			subject := themedCipher.names[idx1]
+			verb := themedCipher.verbs[idx2]
+			s = fmt.Sprintf("%s %s daily", subject, verb)
 			i += 2
 		} else {
 			b := data[i]
-			subject := c.names[b]
-			sentences = append(sentences, fmt.Sprintf("%s works.", subject))
+
+			offset := i
+			idx := (int(b) + offset) % 256
+
+			subject := themedCipher.names[idx]
+			s = fmt.Sprintf("%s works", subject)
 			i++
+		}
+		sentences = append(sentences, s)
+	}
+
+	// Construct Email
+	var sb strings.Builder
+
+	// Subject Line
+	sb.WriteString("Subject: " + subj + "\n\n")
+
+	// Opener
+	opener := emailOpeners[seed%len(emailOpeners)]
+	sb.WriteString(opener + "\n\n")
+
+	// Body
+	for idx, s := range sentences {
+		// Capitalize first letter of the sentence logic happens after connector logic
+		prefix := ""
+
+		// Add connector mostly for subsequent sentences, not the first one
+		if idx > 0 {
+			// Use deterministic pseudo-randomness based on index + seed
+			r := (seed + idx) % 10
+			if r < 6 { // 60% chance to add a connector
+				conn := sentenceConnectors[(seed+idx)%len(sentenceConnectors)]
+				prefix = conn + " "
+			}
+		}
+
+		// Capitalize sentence
+		s = capitalize(s)
+		sb.WriteString(prefix + s + ".")
+
+		// Paragraph spacing
+		if (idx+1)%3 == 0 && idx < len(sentences)-1 {
+			sb.WriteString("\n\n")
+		} else {
+			sb.WriteString(" ")
 		}
 	}
 
-	return strings.Join(sentences, " ")
+	// Closer
+	sb.WriteString("\n\n")
+	closer := emailClosers[seed%len(emailClosers)]
+	sb.WriteString(closer + "\n")
+
+	// Random Sender (use one of the names based on seed)
+	senderIdx := (seed * 7) % len(themedCipher.names)
+	sender := capitalize(themedCipher.names[senderIdx])
+	sb.WriteString(sender)
+
+	return sb.String()
 }
 
 // EncodeNatural creates more varied, natural-looking sentences (backward compatibility)
@@ -331,20 +493,108 @@ func (c *Cipher) DecodeNatural(encoded string) ([]byte, error) {
 		return []byte{}, nil
 	}
 
-	sentences := splitSentences(encoded)
-	var result []byte
+	lines := strings.Split(encoded, "\n")
+	var bodyLines []string
 
-	for _, sentence := range sentences {
+	// Detect Theme from Subject
+	theme := "business" // default
+
+	// Scan for Subject first
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(strings.ToLower(line), "subject:") {
+			subj := strings.TrimSpace(strings.TrimPrefix(strings.ToLower(line), "subject:"))
+
+			// Check if subject belongs to Tech
+			for _, s := range techSubjects {
+				if strings.EqualFold(s, subj) {
+					theme = "tech"
+					break
+				}
+			}
+			break
+		}
+	}
+
+	// Use Themed Cipher for decoding
+	themedCipher := NewThemedCipher(c.key, theme)
+
+	// Filter structure
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Skip Subject line
+		if strings.HasPrefix(strings.ToLower(line), "subject:") {
+			continue
+		}
+
+		// Skip Openers
+		isOpener := false
+		for _, op := range emailOpeners {
+			if strings.TrimSpace(op) == line {
+				isOpener = true
+				break
+			}
+		}
+		if isOpener {
+			continue
+		}
+
+		// Skip Closers
+		isCloser := false
+		for _, cl := range emailClosers {
+			if strings.TrimSpace(cl) == line {
+				isCloser = true
+				break
+			}
+		}
+		if isCloser {
+			continue
+		}
+
+		// Check if it's just a name (Sender signature)
+		// This is tricky because a name could be a valid 1-byte sentence "Name works." but here signature is just "Name"
+		// Signature usually doesn't end with "."
+		// Our sentences always end with "."
+		if !strings.HasSuffix(line, ".") {
+			// Likely a signature or subject garbage
+			continue
+		}
+
+		bodyLines = append(bodyLines, line)
+	}
+
+	fullBody := strings.Join(bodyLines, " ")
+
+	// Split by sentences
+	// Note: Connectors usually end with comma, sentences end with period.
+	rawSentences := splitSentences(fullBody)
+
+	var result []byte
+	byteCount := 0 // Track byte position for rotation offset
+
+	for _, sentence := range rawSentences {
 		sentence = strings.TrimSpace(sentence)
 		if sentence == "" {
 			continue
 		}
 
-		// Remove time prefixes
-		sentence = strings.TrimPrefix(sentence, "today ")
-		sentence = strings.TrimPrefix(sentence, "later ")
-		sentence = strings.TrimPrefix(sentence, "then ")
-		sentence = strings.TrimPrefix(sentence, "now ")
+		// Remove connectors
+		for _, conn := range sentenceConnectors {
+			// Connector usually has space after it
+			// Check case-insensitive matching for connectors?
+			// In Encode, we use them as is (Title case).
+			if strings.HasPrefix(sentence, conn) {
+				sentence = strings.TrimPrefix(sentence, conn)
+				sentence = strings.TrimSpace(sentence)
+				break
+			}
+		}
+
+		// Clean up punctuation just in case
 		sentence = strings.TrimSuffix(sentence, ".")
 
 		words := strings.Fields(sentence)
@@ -352,11 +602,79 @@ func (c *Cipher) DecodeNatural(encoded string) ([]byte, error) {
 			continue
 		}
 
-		bytes, err := c.decodeSentence(words)
-		if err != nil {
-			return nil, fmt.Errorf("error decoding '%s': %w", sentence, err)
+		// Lowercase everything for decoding
+		for i := range words {
+			words[i] = strings.ToLower(words[i])
 		}
-		result = append(result, bytes...)
+
+		// Decode using the new logic that respects offset
+		// We use themedCipher instead of 'c' to lookup verbs/objects
+
+		// Inline logic for rotation awareness:
+		if len(words) < 2 {
+			return nil, fmt.Errorf("invalid sentence: too few words: %s", sentence)
+		}
+
+		// Pattern: "subject works" (1 byte)
+		if len(words) == 2 && words[1] == "works" {
+			sIdx := findIndex(themedCipher.names, words[0])
+			if sIdx == -1 {
+				return nil, fmt.Errorf("unknown name: %s", words[0])
+			}
+
+			offset := byteCount
+			b := (sIdx - offset + 256) % 256
+			result = append(result, byte(b))
+			byteCount++
+			continue
+		}
+
+		// Pattern: "subject verb daily" (2 bytes)
+		if len(words) == 3 && words[2] == "daily" {
+			sIdx := findIndex(themedCipher.names, words[0])
+			if sIdx == -1 {
+				return nil, fmt.Errorf("unknown name: %s", words[0])
+			}
+			vIdx := findIndex(themedCipher.verbs, words[1])
+			if vIdx == -1 {
+				return nil, fmt.Errorf("unknown verb: %s", words[1])
+			}
+
+			offset := byteCount
+			b1 := (sIdx - offset + 256) % 256
+			b2 := (vIdx - offset - 1 + 256) % 256
+
+			result = append(result, byte(b1), byte(b2))
+			byteCount += 2
+			continue
+		}
+
+		// Pattern: "subject verb indirectObject object" (3 bytes)
+		if len(words) == 4 {
+			sIdx := findIndex(themedCipher.names, words[0])
+			if sIdx == -1 {
+				return nil, fmt.Errorf("unknown name: %s", words[0])
+			}
+			vIdx := findIndex(themedCipher.verbs, words[1])
+			if vIdx == -1 {
+				return nil, fmt.Errorf("unknown verb: %s", words[1])
+			}
+			oIdx := findIndex(themedCipher.objects, words[3])
+			if oIdx == -1 {
+				return nil, fmt.Errorf("unknown object: %s", words[3])
+			}
+
+			offset := byteCount
+			b1 := (sIdx - offset + 256) % 256
+			b2 := (vIdx - offset - 1 + 256) % 256
+			b3 := (oIdx - offset - 2 + 256) % 256
+
+			result = append(result, byte(b1), byte(b2), byte(b3))
+			byteCount += 3
+			continue
+		}
+
+		return nil, fmt.Errorf("unrecognized sentence pattern: %s", sentence)
 	}
 
 	return result, nil
@@ -365,6 +683,16 @@ func (c *Cipher) DecodeNatural(encoded string) ([]byte, error) {
 // DecodeNatural decodes text created by EncodeNatural (backward compatibility)
 func DecodeNatural(encoded string) ([]byte, error) {
 	return NewDefaultCipher().DecodeNatural(encoded)
+}
+
+// Helper to capitalize first letter
+func capitalize(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
 }
 
 // Debug helpers (Cipher methods)

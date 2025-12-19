@@ -117,6 +117,10 @@ func encodeNatural(data []byte) string {
 	return sentencecipher.EncodeNatural(data)
 }
 
+func getVersion() string {
+	return sentencecipher.Version
+}
+
 func decodeNatural(encoded string) []byte {
 	result, err := sentencecipher.DecodeNatural(encoded)
 	if err != nil {
@@ -138,5 +142,6 @@ func main() {
 	exports.Set("decodeString", decodeString)
 	exports.Set("encodeNatural", encodeNatural)
 	exports.Set("decodeNatural", decodeNatural)
+	exports.Set("getVersion", getVersion)
 
 }
