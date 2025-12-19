@@ -29,8 +29,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pnpm --filter playground update sentence-cipher
-          pnpm --filter playground install
+          # Modify pnpm-workspace.yaml to ignore local exports package
+          sed -i '/packages\/exports/d' pnpm-workspace.yaml
+
+          # Update playground package.json to use latest version from npm
+          sed -i 's/"sentence-cipher": "workspace:\*"/"sentence-cipher": "latest"/' packages/playground/package.json
+
+          pnpm install --no-frozen-lockfile
 
       - name: Build
         run: pnpm --filter playground build

@@ -3,5 +3,4 @@ onlyBuiltDependencies:
 packages:
     - packages/exports
     - packages/playground
-overrides:
-    sentence-cipher: link:./packages/exports
+    - .
