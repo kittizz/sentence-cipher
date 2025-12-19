@@ -11,7 +11,7 @@ import (
 	"unicode"
 )
 
-const Version = "2.0.7"
+const Version = "2.0.9"
 
 // Cipher holds the shuffled word lists based on a key
 type Cipher struct {
