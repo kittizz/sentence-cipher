@@ -5,7 +5,7 @@ export default defineConfig({
   printCommits: true,
   files: ["package.json", "cipher.go"],
   all: true,
-  execute: (config) => {
+  execute: () => {
     console.log("Running build...");
     execSync("pnpm --filter exports build", { stdio: "inherit" });
     execSync("git add .", { stdio: "inherit" });
