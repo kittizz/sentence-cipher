@@ -39,7 +39,11 @@ func createCipherObject(cipher *sentencecipher.Cipher) *js.Object {
 
 	// Basic encode/decode
 	obj.Set("encode", func(data []byte) string {
-		return cipher.Encode(data)
+		result, err := cipher.Encode(data)
+		if err != nil {
+			throwError(err)
+		}
+		return result
 	})
 	obj.Set("decode", func(encoded string) []byte {
 		result, err := cipher.Decode(encoded)
@@ -51,7 +55,11 @@ func createCipherObject(cipher *sentencecipher.Cipher) *js.Object {
 
 	// String encode/decode
 	obj.Set("encodeString", func(s string) string {
-		return cipher.EncodeString(s)
+		result, err := cipher.EncodeString(s)
+		if err != nil {
+			throwError(err)
+		}
+		return result
 	})
 	obj.Set("decodeString", func(encoded string) string {
 		result, err := cipher.DecodeString(encoded)
@@ -63,7 +71,11 @@ func createCipherObject(cipher *sentencecipher.Cipher) *js.Object {
 
 	// Natural encode/decode
 	obj.Set("encodeNatural", func(data []byte) string {
-		return cipher.EncodeNatural(data)
+		result, err := cipher.EncodeNatural(data)
+		if err != nil {
+			throwError(err)
+		}
+		return result
 	})
 	obj.Set("decodeNatural", func(encoded string) []byte {
 		result, err := cipher.DecodeNatural(encoded)
@@ -75,7 +87,11 @@ func createCipherObject(cipher *sentencecipher.Cipher) *js.Object {
 
 	// Alias methods (encrypt/decrypt = encodeString/decodeString)
 	obj.Set("encrypt", func(plaintext string) string {
-		return cipher.EncodeString(plaintext)
+		result, err := cipher.EncodeString(plaintext)
+		if err != nil {
+			throwError(err)
+		}
+		return result
 	})
 	obj.Set("decrypt", func(encoded string) string {
 		result, err := cipher.DecodeString(encoded)
@@ -90,7 +106,11 @@ func createCipherObject(cipher *sentencecipher.Cipher) *js.Object {
 
 // Package-level functions (backward compatibility with default cipher)
 func encode(data []byte) string {
-	return sentencecipher.Encode(data)
+	result, err := sentencecipher.Encode(data)
+	if err != nil {
+		throwError(err)
+	}
+	return result
 }
 
 func decode(encoded string) []byte {
@@ -102,7 +122,11 @@ func decode(encoded string) []byte {
 }
 
 func encodeString(s string) string {
-	return sentencecipher.EncodeString(s)
+	result, err := sentencecipher.EncodeString(s)
+	if err != nil {
+		throwError(err)
+	}
+	return result
 }
 
 func decodeString(encoded string) string {
@@ -114,7 +138,11 @@ func decodeString(encoded string) string {
 }
 
 func encodeNatural(data []byte) string {
-	return sentencecipher.EncodeNatural(data)
+	result, err := sentencecipher.EncodeNatural(data)
+	if err != nil {
+		throwError(err)
+	}
+	return result
 }
 
 func getVersion() string {

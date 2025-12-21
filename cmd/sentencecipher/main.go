@@ -143,9 +143,13 @@ Examples:
 	} else {
 		// Encode - input is raw bytes, output is text
 		if *naturalFlag {
-			outputText = cipher.EncodeNatural(inputData)
+			outputText, err = cipher.EncodeNatural(inputData)
 		} else {
-			outputText = cipher.Encode(inputData)
+			outputText, err = cipher.Encode(inputData)
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error encoding: %v\n", err)
+			os.Exit(1)
 		}
 	}
 

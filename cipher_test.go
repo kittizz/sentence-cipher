@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -33,7 +34,10 @@ func TestEncodeDecode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			encoded := Encode(tt.input)
+			encoded, err := Encode(tt.input)
+			if err != nil {
+				t.Fatalf("Encode error: %v", err)
+			}
 			decoded, err := Decode(encoded)
 			if err != nil {
 				t.Fatalf("Decode error: %v", err)
@@ -62,7 +66,10 @@ func TestEncodeDecodeString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			encoded := EncodeString(tt.input)
+			encoded, err := EncodeString(tt.input)
+			if err != nil {
+				t.Fatalf("EncodeString error: %v", err)
+			}
 			decoded, err := DecodeString(encoded)
 			if err != nil {
 				t.Fatalf("DecodeString error: %v", err)
@@ -87,7 +94,10 @@ func TestEncodeNaturalDecodeNatural(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			encoded := EncodeNatural(tt.input)
+			encoded, err := EncodeNatural(tt.input)
+			if err != nil {
+				t.Fatalf("EncodeNatural error: %v", err)
+			}
 			decoded, err := DecodeNatural(encoded)
 			if err != nil {
 				t.Fatalf("DecodeNatural error: %v", err)
@@ -103,7 +113,10 @@ func TestEncodeNaturalDecodeNatural(t *testing.T) {
 
 func TestEncodedLooksLikeEnglish(t *testing.T) {
 	input := []byte("Secret")
-	encoded := Encode(input)
+	encoded, err := Encode(input)
+	if err != nil {
+		t.Fatalf("Encode error: %v", err)
+	}
 
 	// Check that encoded text contains expected sentence structure
 	if len(encoded) == 0 {
@@ -126,7 +139,10 @@ func TestEncodedLooksLikeEnglish(t *testing.T) {
 
 func TestNaturalEncodingVariety(t *testing.T) {
 	input := []byte("Hello World!")
-	encoded := EncodeNatural(input)
+	encoded, err := EncodeNatural(input)
+	if err != nil {
+		t.Fatalf("EncodeNatural error: %v", err)
+	}
 
 	// Natural encoding should use varied templates
 	t.Logf("Natural encoded: %q", encoded)
@@ -166,7 +182,11 @@ func TestAllByteValues(t *testing.T) {
 	// Test that all possible byte values can be encoded and decoded
 	for i := 0; i < 256; i++ {
 		input := []byte{byte(i)}
-		encoded := Encode(input)
+		encoded, err := Encode(input)
+		if err != nil {
+			t.Errorf("Failed to encode byte %d: %v", i, err)
+			continue
+		}
 		decoded, err := Decode(encoded)
 		if err != nil {
 			t.Errorf("Failed to decode byte %d: %v", i, err)
@@ -192,7 +212,11 @@ func TestAllTwoByteCombinatons(t *testing.T) {
 
 	for _, sample := range samples {
 		input := []byte{sample[0], sample[1]}
-		encoded := Encode(input)
+		encoded, err := Encode(input)
+		if err != nil {
+			t.Errorf("Failed to encode %v: %v", input, err)
+			continue
+		}
 		decoded, err := Decode(encoded)
 		if err != nil {
 			t.Errorf("Failed to decode %v: %v", input, err)
@@ -221,7 +245,10 @@ func TestBinaryData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			encoded := Encode(tt.input)
+			encoded, err := Encode(tt.input)
+			if err != nil {
+				t.Fatalf("Encode error: %v", err)
+			}
 			decoded, err := Decode(encoded)
 			if err != nil {
 				t.Fatalf("Decode error: %v", err)
@@ -258,7 +285,10 @@ func TestCipherWithKey(t *testing.T) {
 				t.Fatalf("NewCipher error: %v", err)
 			}
 
-			encoded := cipher.Encode(tt.input)
+			encoded, err := cipher.Encode(tt.input)
+			if err != nil {
+				t.Fatalf("Encode error: %v", err)
+			}
 			decoded, err := cipher.Decode(encoded)
 			if err != nil {
 				t.Fatalf("Decode error: %v", err)
@@ -287,7 +317,10 @@ func TestCipherNaturalWithKey(t *testing.T) {
 				t.Fatalf("NewCipher error: %v", err)
 			}
 
-			encoded := cipher.EncodeNatural(tt.input)
+			encoded, err := cipher.EncodeNatural(tt.input)
+			if err != nil {
+				t.Fatalf("EncodeNatural error: %v", err)
+			}
 			decoded, err := cipher.DecodeNatural(encoded)
 			if err != nil {
 				t.Fatalf("DecodeNatural error: %v", err)
@@ -306,9 +339,9 @@ func TestDifferentKeysProduceDifferentOutput(t *testing.T) {
 	cipher2, _ := NewCipher("key2")
 	defaultCipher := NewDefaultCipher()
 
-	encoded1 := cipher1.Encode(input)
-	encoded2 := cipher2.Encode(input)
-	encodedDefault := defaultCipher.Encode(input)
+	encoded1, _ := cipher1.Encode(input)
+	encoded2, _ := cipher2.Encode(input)
+	encodedDefault, _ := defaultCipher.Encode(input)
 
 	if encoded1 == encoded2 {
 		t.Error("Different keys should produce different encoded output")
@@ -327,7 +360,10 @@ func TestWrongKeyCannotDecode(t *testing.T) {
 	cipher1, _ := NewCipher("correct-key")
 	cipher2, _ := NewCipher("wrong-key")
 
-	encoded := cipher1.Encode(input)
+	encoded, err := cipher1.Encode(input)
+	if err != nil {
+		t.Fatalf("Encode error: %v", err)
+	}
 	decoded, err := cipher2.Decode(encoded)
 
 	// With wrong key, either error or different data
@@ -343,7 +379,11 @@ func TestAllThreeByteGroups(t *testing.T) {
 		for b2 := 0; b2 < 16; b2++ {
 			for b3 := 0; b3 < 16; b3++ {
 				input := []byte{byte(b1 * 16), byte(b2 * 16), byte(b3 * 16)}
-				encoded := Encode(input)
+				encoded, err := Encode(input)
+				if err != nil {
+					t.Errorf("Failed to encode %v: %v", input, err)
+					continue
+				}
 				decoded, err := Decode(encoded)
 				if err != nil {
 					t.Errorf("Failed to decode %v: %v", input, err)
@@ -368,7 +408,10 @@ func TestLargeBinaryData(t *testing.T) {
 				input[i] = byte(i % 256)
 			}
 
-			encoded := Encode(input)
+			encoded, err := Encode(input)
+			if err != nil {
+				t.Fatalf("Encode error for size %d: %v", size, err)
+			}
 			decoded, err := Decode(encoded)
 			if err != nil {
 				t.Fatalf("Decode error for size %d: %v", size, err)
@@ -388,7 +431,10 @@ func TestLargeBinaryWithKey(t *testing.T) {
 		input[i] = byte(i % 256)
 	}
 
-	encoded := cipher.Encode(input)
+	encoded, err := cipher.Encode(input)
+	if err != nil {
+		t.Fatalf("Encode error: %v", err)
+	}
 	decoded, err := cipher.Decode(encoded)
 	if err != nil {
 		t.Fatalf("Decode error: %v", err)
@@ -406,7 +452,10 @@ func TestImageFile(t *testing.T) {
 	}
 
 	t.Run("normal_mode", func(t *testing.T) {
-		encoded := Encode(imgData)
+		encoded, err := Encode(imgData)
+		if err != nil {
+			t.Fatalf("Encode error: %v", err)
+		}
 		decoded, err := Decode(encoded)
 		if err != nil {
 			t.Fatalf("Decode error: %v", err)
@@ -417,7 +466,10 @@ func TestImageFile(t *testing.T) {
 	})
 
 	t.Run("natural_mode", func(t *testing.T) {
-		encoded := EncodeNatural(imgData)
+		encoded, err := EncodeNatural(imgData)
+		if err != nil {
+			t.Fatalf("EncodeNatural error: %v", err)
+		}
 		decoded, err := DecodeNatural(encoded)
 		if err != nil {
 			t.Fatalf("DecodeNatural error: %v", err)
@@ -429,7 +481,10 @@ func TestImageFile(t *testing.T) {
 
 	t.Run("with_key", func(t *testing.T) {
 		cipher, _ := NewCipher("image-test-key")
-		encoded := cipher.Encode(imgData)
+		encoded, err := cipher.Encode(imgData)
+		if err != nil {
+			t.Fatalf("Encode error: %v", err)
+		}
 		decoded, err := cipher.Decode(encoded)
 		if err != nil {
 			t.Fatalf("Decode error: %v", err)
@@ -441,7 +496,10 @@ func TestImageFile(t *testing.T) {
 
 	t.Run("natural_with_key", func(t *testing.T) {
 		cipher, _ := NewCipher("image-natural-key")
-		encoded := cipher.EncodeNatural(imgData)
+		encoded, err := cipher.EncodeNatural(imgData)
+		if err != nil {
+			t.Fatalf("EncodeNatural error: %v", err)
+		}
 		decoded, err := cipher.DecodeNatural(encoded)
 		if err != nil {
 			t.Fatalf("DecodeNatural error: %v", err)
@@ -456,16 +514,16 @@ func BenchmarkEncode(b *testing.B) {
 	input := []byte("The quick brown fox jumps over the lazy dog")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Encode(input)
+		_, _ = Encode(input)
 	}
 }
 
 func BenchmarkDecode(b *testing.B) {
 	input := []byte("The quick brown fox jumps over the lazy dog")
-	encoded := Encode(input)
+	encoded, _ := Encode(input)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Decode(encoded)
+		_, _ = Decode(encoded)
 	}
 }
 
@@ -473,27 +531,121 @@ func BenchmarkEncodeNatural(b *testing.B) {
 	input := []byte("The quick brown fox jumps over the lazy dog")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		EncodeNatural(input)
+		_, _ = EncodeNatural(input)
 	}
 }
 
 func BenchmarkDecodeNatural(b *testing.B) {
 	input := []byte("The quick brown fox jumps over the lazy dog")
-	encoded := EncodeNatural(input)
+	encoded, _ := EncodeNatural(input)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		DecodeNatural(encoded)
+		_, _ = DecodeNatural(encoded)
 	}
 }
 
 // Example tests
 func ExampleEncodeString() {
-	encoded := EncodeString("Hi")
+	encoded, _ := EncodeString("Hi")
 	_ = encoded // Encoded looks like English sentences
 }
 
 func ExampleDecodeString() {
-	encoded := EncodeString("Hi")
+	encoded, _ := EncodeString("Hi")
 	decoded, _ := DecodeString(encoded)
 	_ = decoded // "Hi"
+}
+
+func TestWordListIntegrity(t *testing.T) {
+	lists := []struct {
+		name string
+		list []string
+	}{
+		{"defaultNames", defaultNames},
+		{"defaultVerbs", defaultVerbs},
+		{"defaultObjects", defaultObjects},
+		{"techVerbs", techVerbs},
+		{"techObjects", techObjects},
+	}
+
+	for _, l := range lists {
+		t.Run(l.name, func(t *testing.T) {
+			if len(l.list) != 256 {
+				t.Errorf("List %s has length %d, want 256", l.name, len(l.list))
+			}
+			checkDuplicates(t, l.name, l.list)
+		})
+	}
+}
+
+func checkDuplicates(t *testing.T, name string, list []string) {
+	seen := make(map[string]int)
+	for i, w := range list {
+		w = strings.ToLower(w)
+		if idx, exists := seen[w]; exists {
+			t.Errorf("Duplicate in %s: '%s' at index %d and %d", name, w, idx, i)
+		}
+		seen[w] = i
+	}
+}
+
+func TestSubjectOverlap(t *testing.T) {
+	// Check if any subject exists in both business and tech subjects
+	// This could confuse theme detection
+	business := businessSubjects
+	tech := techSubjects
+
+	for _, b := range business {
+		for _, te := range tech {
+			if strings.EqualFold(b, te) {
+				t.Errorf("Subject overlap found: '%s' is in both Business and Tech lists", b)
+			}
+		}
+	}
+}
+
+func TestNoSpacesInWords(t *testing.T) {
+	lists := []struct {
+		name string
+		list []string
+	}{
+		{"defaultNames", defaultNames},
+		{"defaultVerbs", defaultVerbs},
+		{"defaultObjects", defaultObjects},
+		{"techVerbs", techVerbs},
+		{"techObjects", techObjects},
+	}
+
+	for _, l := range lists {
+		t.Run(l.name, func(t *testing.T) {
+			for i, w := range l.list {
+				if strings.Contains(w, " ") {
+					t.Errorf("Space found in %s[%d]: '%s'", l.name, i, w)
+				}
+			}
+		})
+	}
+}
+
+func TestNoPunctuationInWords(t *testing.T) {
+	lists := []struct {
+		name string
+		list []string
+	}{
+		{"defaultNames", defaultNames},
+		{"defaultVerbs", defaultVerbs},
+		{"defaultObjects", defaultObjects},
+		{"techVerbs", techVerbs},
+		{"techObjects", techObjects},
+	}
+
+	for _, l := range lists {
+		t.Run(l.name, func(t *testing.T) {
+			for i, w := range l.list {
+				if strings.ContainsAny(w, ".,") {
+					t.Errorf("Punctuation found in %s[%d]: '%s'", l.name, i, w)
+				}
+			}
+		})
+	}
 }

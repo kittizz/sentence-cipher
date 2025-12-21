@@ -1,17 +1,21 @@
 package sentencecipher
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/andybalholm/brotli"
 )
 
-const Version = "2.0.12"
+const Version = "2.1.0"
 
 // Cipher holds the shuffled word lists based on a key
 type Cipher struct {
@@ -100,6 +104,29 @@ func shuffleWithSeed(src []string, seed int64) []string {
 	return dst
 }
 
+// ===========================================
+// Compression helpers using brotli
+// ===========================================
+
+// compress compresses data using brotli with BestCompression level
+func compress(data []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	w := brotli.NewWriterLevel(&buf, brotli.BestCompression)
+	if _, err := w.Write(data); err != nil {
+		return nil, err
+	}
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// decompress decompresses brotli-compressed data
+func decompress(data []byte) ([]byte, error) {
+	r := brotli.NewReader(bytes.NewReader(data))
+	return io.ReadAll(r)
+}
+
 // Sentence pattern: "Subject verb IndirectObject object."
 // Each sentence encodes 3 bytes:
 // - Byte 1: Subject (name index 0-255)
@@ -107,8 +134,8 @@ func shuffleWithSeed(src []string, seed int64) []string {
 // - Byte 3: Object (object index 0-255)
 // IndirectObject is derived from (byte1 + byte2) % 256 for natural flow
 
-// Encode converts bytes to English sentences (Cipher method)
-func (c *Cipher) Encode(data []byte) string {
+// encodeRaw converts bytes to English sentences without compression (internal use)
+func (c *Cipher) encodeRaw(data []byte) string {
 	if len(data) == 0 {
 		return ""
 	}
@@ -170,13 +197,8 @@ func (c *Cipher) Encode(data []byte) string {
 	return strings.Join(sentences, " ")
 }
 
-// Encode converts bytes to English sentences (package-level function for backward compatibility)
-func Encode(data []byte) string {
-	return NewDefaultCipher().Encode(data)
-}
-
-// Decode converts English sentences back to bytes (Cipher method)
-func (c *Cipher) Decode(encoded string) ([]byte, error) {
+// decodeRaw converts English sentences back to bytes without decompression (internal use)
+func (c *Cipher) decodeRaw(encoded string) ([]byte, error) {
 	if encoded == "" {
 		return []byte{}, nil
 	}
@@ -222,7 +244,40 @@ func (c *Cipher) Decode(encoded string) ([]byte, error) {
 	return result, nil
 }
 
-// Decode converts English sentences back to bytes (package-level function for backward compatibility)
+// Encode compresses data with flate then converts to English sentences
+func (c *Cipher) Encode(data []byte) (string, error) {
+	if len(data) == 0 {
+		return "", nil
+	}
+	compressed, err := compress(data)
+	if err != nil {
+		return "", fmt.Errorf("compression failed: %w", err)
+	}
+	return c.encodeRaw(compressed), nil
+}
+
+// Decode converts English sentences back to bytes then decompresses
+func (c *Cipher) Decode(encoded string) ([]byte, error) {
+	if encoded == "" {
+		return []byte{}, nil
+	}
+	compressed, err := c.decodeRaw(encoded)
+	if err != nil {
+		return nil, err
+	}
+	decompressed, err := decompress(compressed)
+	if err != nil {
+		return nil, fmt.Errorf("decompression failed: %w", err)
+	}
+	return decompressed, nil
+}
+
+// Encode compresses then encodes (package-level)
+func Encode(data []byte) (string, error) {
+	return NewDefaultCipher().Encode(data)
+}
+
+// Decode decodes then decompresses (package-level)
 func Decode(encoded string) ([]byte, error) {
 	return NewDefaultCipher().Decode(encoded)
 }
@@ -316,7 +371,7 @@ func findIndex(list []string, word string) int {
 }
 
 // EncodeString encodes a string (Cipher method)
-func (c *Cipher) EncodeString(s string) string {
+func (c *Cipher) EncodeString(s string) (string, error) {
 	return c.Encode([]byte(s))
 }
 
@@ -329,12 +384,12 @@ func (c *Cipher) DecodeString(encoded string) (string, error) {
 	return string(data), nil
 }
 
-// EncodeString is a convenience function for encoding strings (backward compatibility)
-func EncodeString(s string) string {
+// EncodeString is a convenience function for encoding strings (package-level)
+func EncodeString(s string) (string, error) {
 	return Encode([]byte(s))
 }
 
-// DecodeString is a convenience function for decoding to strings (backward compatibility)
+// DecodeString is a convenience function for decoding to strings (package-level)
 func DecodeString(encoded string) (string, error) {
 	data, err := Decode(encoded)
 	if err != nil {
@@ -343,8 +398,8 @@ func DecodeString(encoded string) (string, error) {
 	return string(data), nil
 }
 
-// EncodeNatural creates more varied, natural-looking sentences structured as an email (Cipher method)
-func (c *Cipher) EncodeNatural(data []byte) string {
+// encodeNaturalRaw creates natural-looking sentences without compression (internal use)
+func (c *Cipher) encodeNaturalRaw(data []byte) string {
 	if len(data) == 0 {
 		return ""
 	}
@@ -482,13 +537,8 @@ func (c *Cipher) EncodeNatural(data []byte) string {
 	return sb.String()
 }
 
-// EncodeNatural creates more varied, natural-looking sentences (backward compatibility)
-func EncodeNatural(data []byte) string {
-	return NewDefaultCipher().EncodeNatural(data)
-}
-
-// DecodeNatural decodes text created by EncodeNatural (Cipher method)
-func (c *Cipher) DecodeNatural(encoded string) ([]byte, error) {
+// decodeNaturalRaw decodes natural email without decompression (internal use)
+func (c *Cipher) decodeNaturalRaw(encoded string) ([]byte, error) {
 	if encoded == "" {
 		return []byte{}, nil
 	}
@@ -680,7 +730,40 @@ func (c *Cipher) DecodeNatural(encoded string) ([]byte, error) {
 	return result, nil
 }
 
-// DecodeNatural decodes text created by EncodeNatural (backward compatibility)
+// EncodeNatural compresses data then creates natural-looking email sentences
+func (c *Cipher) EncodeNatural(data []byte) (string, error) {
+	if len(data) == 0 {
+		return "", nil
+	}
+	compressed, err := compress(data)
+	if err != nil {
+		return "", fmt.Errorf("compression failed: %w", err)
+	}
+	return c.encodeNaturalRaw(compressed), nil
+}
+
+// DecodeNatural decodes natural email then decompresses
+func (c *Cipher) DecodeNatural(encoded string) ([]byte, error) {
+	if encoded == "" {
+		return []byte{}, nil
+	}
+	compressed, err := c.decodeNaturalRaw(encoded)
+	if err != nil {
+		return nil, err
+	}
+	decompressed, err := decompress(compressed)
+	if err != nil {
+		return nil, fmt.Errorf("decompression failed: %w", err)
+	}
+	return decompressed, nil
+}
+
+// EncodeNatural compresses then encodes as natural (package-level)
+func EncodeNatural(data []byte) (string, error) {
+	return NewDefaultCipher().EncodeNatural(data)
+}
+
+// DecodeNatural decodes natural then decompresses (package-level)
 func DecodeNatural(encoded string) ([]byte, error) {
 	return NewDefaultCipher().DecodeNatural(encoded)
 }
@@ -705,7 +788,12 @@ func (c *Cipher) DebugEncode(data []byte) {
 	for i, b := range data {
 		fmt.Printf("  [%d] %s\n", i, c.DebugByte(b))
 	}
-	fmt.Println("Encoded:", c.Encode(data))
+	encoded, err := c.Encode(data)
+	if err != nil {
+		fmt.Println("Encode error:", err)
+		return
+	}
+	fmt.Println("Encoded:", encoded)
 }
 
 // Debug helpers (backward compatibility)
